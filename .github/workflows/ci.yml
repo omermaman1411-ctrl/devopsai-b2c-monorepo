@@ -15,6 +15,7 @@ jobs:
     outputs:
       user: ${{ steps.filter.outputs.user }}
       order: ${{ steps.filter.outputs.order }}
+      workflow: ${{ steps.filter.outputs.workflow }}
     steps:
       - uses: actions/checkout@v4
       - id: filter
@@ -25,6 +26,8 @@ jobs:
               - 'services/user-service/**'
             order:
               - 'services/order-service/**'
+            workflow:
+              - '.github/workflows/ci.yml'
 
   build-push:
     runs-on: ubuntu-latest
@@ -33,11 +36,11 @@ jobs:
       matrix:
         include:
           - name: user-service
-            changed: ${{ needs.detect-changes.outputs.user }}
+            changed: ${{ (needs.detect-changes.outputs.user == 'true' || needs.detect-changes.outputs.workflow == 'true') && 'true' || 'false' }}
             path: services/user-service
             image_suffix: user-service
           - name: order-service
-            changed: ${{ needs.detect-changes.outputs.order }}
+            changed: ${{ (needs.detect-changes.outputs.order == 'true' || needs.detect-changes.outputs.workflow == 'true') && 'true' || 'false' }}
             path: services/order-service
             image_suffix: order-service
     steps:
@@ -81,9 +84,9 @@ jobs:
       matrix:
         include:
           - values_file: gitops/image-tags/dev/user-service-values.yaml
-            changed: ${{ needs.detect-changes.outputs.user }}
+            changed: ${{ (needs.detect-changes.outputs.user == 'true' || needs.detect-changes.outputs.workflow == 'true') && 'true' || 'false' }}
           - values_file: gitops/image-tags/dev/order-service-values.yaml
-            changed: ${{ needs.detect-changes.outputs.order }}
+            changed: ${{ (needs.detect-changes.outputs.order == 'true' || needs.detect-changes.outputs.workflow == 'true') && 'true' || 'false' }}
     steps:
       - name: Skip unchanged service
         if: ${{ matrix.changed != 'true' }}
