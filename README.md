@@ -132,6 +132,8 @@ pytest -q
 
 The tests load each Flask app directly and check core endpoints.
 
+---
+
 ## Helm charts
 
 Two simple Helm charts are included:
@@ -152,6 +154,8 @@ helm/
 
 Set `image.repository` and `image.tag` in values or via ArgoCD.
 
+---
+
 ## ArgoCD (demo app-of-apps)
 
 Folder: `gitops/`
@@ -168,7 +172,7 @@ gitops/
 ```
 
 - The Applications reference the Helm charts in this same repo and include a **values file** per service to drive the image tag.  
-- Update `repoURL` fields to point at your Git repository.
+- Update `repoURL` fields to point at your Git repository.  
 - Change the tag files under `gitops/image-tags/*.yaml` to rollout new versions (GitOps-friendly).
 
 Apply (assuming ArgoCD installed and repo accessible):
@@ -181,6 +185,7 @@ kubectl create ns b2c-demo
 kubectl -n argocd apply -f gitops/apps/app-of-apps.yaml
 ```
 
+---
 
 ## Environments: dev & stage
 
@@ -192,3 +197,112 @@ kubectl -n argocd apply -f gitops/apps/app-of-apps.yaml
 ### Promote to stage (manual)
 Run the GitHub Action **Promote to stage** with input `tag` (e.g., the short SHA built by CI).
 This opens a PR updating the stage values files; merge it and ArgoCD will roll out to `b2c-stage`.
+
+---
+
+## GitHub Actions Permissions
+
+Your **Promote to stage** workflow uses the built-in `GITHUB_TOKEN` to open pull requests automatically.  
+To allow this, you must enable a repository (or org-level) setting.
+
+### 🧭 Enable “Allow GitHub Actions to create and approve pull requests”
+
+1. Go to your repository page on GitHub.  
+2. Click **Settings → Actions → General**.  
+3. Scroll down to **Workflow permissions**.  
+4. Check **“Allow GitHub Actions to create and approve pull requests.”**  
+5. Click **Save**.
+
+> If this option is disabled or greyed out, your organization’s admin must enable it at  
+> **Organization Settings → Actions → General → Workflow permissions**  
+> (or **Enterprise Settings** for enterprise-managed orgs).
+
+---
+
+## Running the Promotion Workflow
+
+Once CI has pushed a new image, you can manually promote that tag to **stage**:
+
+1. Go to **Actions** → **Promote to stage** in the GitHub web UI.  
+2. Click **Run workflow** (top-right).  
+3. Enter the short image tag or SHA from the CI build.  
+4. Click **Run workflow**.
+
+This creates a branch named `promote/<tag>` and automatically opens a Pull Request.  
+After review and merge, ArgoCD detects the updated stage values and deploys to the `b2c-stage` namespace.
+
+> 💡 You can also trigger the workflow from the CLI:
+> ```bash
+> gh workflow run "Promote to stage" -f tag=<short_sha>
+> ```
+
+---
+
+## 🧰 Troubleshooting — “GitHub Actions is not permitted to create or approve pull requests”
+
+If your workflow fails with this error:
+
+```
+GitHub Actions is not permitted to create or approve pull requests.
+```
+
+it means your repository or organization currently **disables PR creation via the default GITHUB_TOKEN**.
+
+### ✅ Option 1 — Enable the permission in GitHub UI
+1. Go to **Settings → Actions → General** in your repository.  
+2. Under **Workflow permissions**, select **“Allow GitHub Actions to create and approve pull requests.”**  
+3. Save changes.
+
+If this option is greyed out:
+- Ask your **org admin** to enable it at the organization level:  
+  **Organization Settings → Actions → General → Workflow permissions.**
+
+---
+
+### 🔐 Option 2 — Use a Personal Access Token (bot)
+If your org restricts that setting, you can use a **bot PAT** instead of `GITHUB_TOKEN`:
+
+1. Create a GitHub user (e.g., `stage-bot`) with **Write** access to the repo.  
+2. Generate a **Fine-grained Personal Access Token (PAT)** with:
+   - Repository contents: Read/Write  
+   - Pull requests: Read/Write  
+3. Store it as a repo secret named `ACTIONS_BOT_PAT`.  
+4. Update your workflow:
+
+```yaml
+- name: Create Pull Request (bot)
+  uses: peter-evans/create-pull-request@v6
+  with:
+    token: ${{ secrets.ACTIONS_BOT_PAT }}
+    branch: "promote/${{ github.event.inputs.tag }}"
+    commit-message: "Promote to stage: ${{ github.event.inputs.tag }}"
+    title: "Promote to stage: ${{ github.event.inputs.tag }}"
+```
+
+This lets the workflow create the branch and PR using your bot’s credentials, even if GitHub Actions itself isn’t permitted to.
+
+---
+
+### 🧩 Option 3 — Use a GitHub App Token
+For enterprise setups, create a **GitHub App** with:
+- `contents: read/write`
+- `pull_requests: read/write`
+
+Then generate an installation token in your workflow using:
+```yaml
+- uses: tibdex/github-app-token@v2
+  id: app-token
+  with:
+    app_id: ${{ secrets.APP_ID }}
+    private_key: ${{ secrets.APP_PRIVATE_KEY }}
+    installation_id: ${{ secrets.APP_INSTALLATION_ID }}
+```
+
+And pass it to the `create-pull-request` step:
+```yaml
+token: ${{ steps.app-token.outputs.token }}
+```
+
+---
+
+This ensures your **Promote to stage** workflow runs smoothly regardless of org policies and keeps your deployment flow secure and auditable.

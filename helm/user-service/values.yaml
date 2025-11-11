@@ -4,8 +4,10 @@ image:
 replicaCount: 1
 
 service:
-  type: ClusterIP
+  # NodePort for Docker Desktop, LoadBalancer for cloud
+  type: NodePort
   port: 80
+  nodePort: 50001
 
 env:
   - name: SECRET_KEY

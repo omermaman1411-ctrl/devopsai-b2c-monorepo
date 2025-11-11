@@ -17,3 +17,5 @@ spec:
     namespace: b2c-demo
   syncPolicy:
     automated: {}
+    syncOptions:
+      - CreateNamespace=true

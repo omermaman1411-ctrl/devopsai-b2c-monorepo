@@ -2,9 +2,17 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "order-service.fullname" . }}
+  labels:
+    {{- include "order-service.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
-  selector: { app.kubernetes.io/name: {{ include "order-service.name" . }} }
+  # 👇 Use service.type from values.yaml (NodePort for Docker Desktop, LoadBalancer for cloud)
+  type: {{ .Values.service.type | default "ClusterIP" }}
+  selector:
+    {{- include "order-service.selectorLabels" . | nindent 4 }}
   ports:
-    - port: {{ .Values.service.port }}
+    - name: http
+      port: {{ .Values.service.port | default 80 }}
       targetPort: 5000
+      {{- if and (eq .Values.service.type "NodePort") (.Values.service.nodePort) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
