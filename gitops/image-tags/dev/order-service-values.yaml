@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/baruchihalamish20/order-service
-  tag: "481b3ea"
+  tag: "277c7d6"
 env:
   - name: SECRET_KEY
     value: "dev-secret-order"
@@ -8,6 +8,6 @@ env:
     value: "dev"
 
 service:
-  type: NodePort
+  type: LoadBalancer
   port: 80
   nodePort: 30012
