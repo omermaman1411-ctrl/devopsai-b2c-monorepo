@@ -103,5 +103,9 @@ def baruchi_login():
     # attach token as query param for browser-friendly redirection
     return redirect(f"{profile_url}?token={token}")
 
+@app.get("/niv-login")
+def niv_login():
+    return jsonify({"who is the king?": "Niv"})
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
