@@ -103,5 +103,12 @@ def baruchi_login():
     # attach token as query param for browser-friendly redirection
     return redirect(f"{profile_url}?token={token}")
 
+       
+
+@app.get("/omer-login")
+def omer_login():
+    return jsonify({"who is the king ": "ok", "service": "user-service", "env": ENVIRONMENT})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
