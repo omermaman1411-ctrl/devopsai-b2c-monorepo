@@ -125,16 +125,26 @@ jobs:
 
       - name: Run tests with pytest
         if: ${{ matrix.changed == 'true' }}
-        working-directory: ${{ matrix.path }}
         run: |
-          echo "🧪 Running pytest..."
+          echo "🧪 Running pytest for ${{ matrix.name }}..."
           
-          if [ -d "tests" ] && [ "$(ls -A tests/*.py 2>/dev/null)" ]; then
+          # Map service names to test files
+          TEST_FILE=""
+          if [ "${{ matrix.name }}" = "user-service" ]; then
+            TEST_FILE="tests/test_user_service.py"
+          elif [ "${{ matrix.name }}" = "order-service" ]; then
+            TEST_FILE="tests/test_order_service.py"
+          fi
+          
+          if [ -f "$TEST_FILE" ]; then
+            # Install service dependencies in the root environment
+            cd ${{ matrix.path }} && pip install -r requirements.txt && cd -
+            
             # Run tests with coverage
-            pytest tests/ -v --cov=. --cov-report=term-missing
+            pytest "$TEST_FILE" -v --cov=${{ matrix.path }} --cov-report=term-missing
             echo "✅ Tests passed!"
           else
-            echo "ℹ️  No tests found in tests/ directory."
+            echo "ℹ️  No test file found at $TEST_FILE."
             echo "⚠️  Consider adding tests to improve code quality."
             exit 0
           fi
