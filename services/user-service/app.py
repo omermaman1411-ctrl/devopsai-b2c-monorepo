@@ -109,6 +109,8 @@ def baruchi_login():
 def omer_login():
     return jsonify({"who is the king ": "ok", "service": "user-service", "env": ENVIRONMENT})
 
+# trigger build
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
