@@ -306,3 +306,5 @@ token: ${{ steps.app-token.outputs.token }}
 ---
 
 This ensures your **Promote to stage** workflow runs smoothly regardless of org policies and keeps your deployment flow secure and auditable.
+
+<!-- test change to trigger GHCR build -->
