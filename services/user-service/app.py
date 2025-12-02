@@ -107,7 +107,7 @@ def baruchi_login():
 
 @app.get("/omer-login")
 def omer_login():
-    return jsonify({"who is the king ": "omer maman", "service": "user-service", "env": ENVIRONMENT})
+    return jsonify({"who is the king of kings ": "omer maman", "service": "user-service", "env": ENVIRONMENT})
 
 
 if __name__ == "__main__":

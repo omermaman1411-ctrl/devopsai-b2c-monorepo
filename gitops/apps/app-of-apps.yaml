@@ -6,15 +6,17 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/BaruchiHalamish20/devopsai-b2c-monorepo.git
+    repoURL: https://github.com/omermaman1411-ctrl/devopsai-b2c-monorepo.git
     targetRevision: master
     path: gitops/apps
     directory:
       recurse: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: dev   # או devopsai-dev אם ככה קראתם ל-namespace
   syncPolicy:
-    automated: {}
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
